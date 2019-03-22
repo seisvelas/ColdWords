@@ -1,13 +1,11 @@
 import requests
 import json
 import re
-from sqlalchemy import MetaData, String, Table, Column, Integer, create_engine
-from mah_credentials import user, password, host  # postgresql user/pass/host
+from sqlalchemy import String, Table, Column, Integer, create_engine, MetaData
+from database_credentials import user, password, host  # postgresql user/pass/host
 
 
-ideologies = ["capitalism", "communism"]
-
-
+IDEOLOGIES = ["capitalism", "communism"]
 REDDIT_URL = "https://www.reddit.com"
 FAKE_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
@@ -36,16 +34,17 @@ def upload(scores):
     c.close()
 
 
-def countWords(text):
-    words = {}
+def count_words(text):
+    print(text)
+    count = {}
 
-    for w in text:
-        if w in words:
-            words[w] += 1
+    for word in text:
+        if word in count:
+            count[word] += 1
         else:
-            words[w] = 1
+            count[word] = 1
 
-    return words
+    return count
 
 
 def letters_only(string):
@@ -57,16 +56,14 @@ def comments(sub):
     r = requests.get("%s/r/%s.json" % (REDDIT_URL, sub), headers=FAKE_HEADERS)
     posts = json.loads(r.text)["data"]["children"]
     comments = [REDDIT_URL + p["data"]["selftext"] + ".json" for p in posts]
-
     # Remove links and non-alphabetic characters
-    return [letters_only(i) for i in comments.split() if i not in ["http", '']]
+    return [letters_only(i) for i in comments if i and ('http' not in i)]
 
 
 scores = {}
 
-for sub in ideologies:
-    count = countWords(comments(sub))
-    print(count)
+for sub in IDEOLOGIES:
+    count = count_words(comments(sub))
     nums = [value for key, value in count.items()]
     avg = sum(nums) / len(nums)
     scores[sub] = int(sum([(1 if num >= avg else num / avg) for num in nums]))
