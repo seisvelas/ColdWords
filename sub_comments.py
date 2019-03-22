@@ -1,32 +1,40 @@
 import requests
 import json
 import re
-import sqlalchemy
-import mah_credentials # postgresql user/pass here
+from sqlalchemy import MetaData, String, Table, Column, Integer, create_engine
+from mah_credentials import user, password, host  # postgresql user/pass/host
 
-meta = sqlalchemy.MetaData()
 
-comments_table = sqlalchemy.Table('comments', meta,
-    sqlalchemy.Column('ideology', sqlalchemy.String(collation='utf8')),
-    sqlalchemy.Column('score', sqlalchemy.Integer)
-)
+ideologies = ["capitalism", "communism"]
+
+
+REDDIT_URL = "https://www.reddit.com"
+FAKE_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
+AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
+    'From': 'jimmjoeJohnson@mywebsite.net'  # This is another valid field
+}
+
+
+meta = MetaData()
+
+comments_table = Table('comments', meta,
+                       Column('ideology', String(collation='utf8')),
+                       Column('score', Integer))
+
 
 def upload(scores):
-    print('postgresql://%s:%s@%s:5432/postgres' % (mah_credentials.user, mah_credentials.password, mah_credentials.host))
-    engine = sqlalchemy.create_engine('postgresql://%s:%s@%s:5432/postgres' % (mah_credentials.user, mah_credentials.password, mah_credentials.host))
+    engine = create_engine('postgresql://%s:%s@%s:5432/postgres' %
+                           (user, password, host))
     c = engine.connect()
     trans = c.begin()
+
     for i, s in scores.items():
-        c.execute(comments_table.insert(),ideology=i, score=s)
+        c.execute(comments_table.insert(), ideology=i, score=s)
+
     trans.commit()
     c.close()
 
-
-reddit = "https://www.reddit.com"
-headers_evil_FAKE = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
-    'From': 'jimmjoeJohnson@mywebsite.net'  # This is another valid field
-}
 
 def countWords(text):
     words = {}
@@ -36,28 +44,32 @@ def countWords(text):
             words[w] += 1
         else:
             words[w] = 1
-        
+
     return words
 
+
+def letters_only(string):
+    return re.sub(r'\W+', '', string)
+
+
+# TODO: Handle API errors (eg 403 quarantine Reddit error)
 def comments(sub):
+    r = requests.get("%s/r/%s.json" % (REDDIT_URL, sub), headers=FAKE_HEADERS)
+    posts = json.loads(r.text)["data"]["children"]
+    comments = [REDDIT_URL + p["data"]["selftext"] + ".json" for p in posts]
 
-	# I am too hacky with parsing JSON / API stuff
-	# how do I do this gracefully?
-	
-	r = requests.get("%s/r/%s.json" % (reddit, sub), headers=headers_evil_FAKE)
-	subredditJSON = json.loads(r.text)["data"]["children"]
-	words = [str(reddit + url["data"]["selftext"] + ".json") for url in subredditJSON]
-	return countWords([i for i in [re.sub(r'\W+', '', i) for i in " ".join(words).split() if "http" not in i] if i!=''])
+    # Remove links and non-alphabetic characters
+    return [letters_only(i) for i in comments.split() if i not in ["http", '']]
 
-ideologies = ["capitalism", "communism"]
 
 scores = {}
 
 for sub in ideologies:
-    count = comments(sub)
+    count = countWords(comments(sub))
     print(count)
     nums = [value for key, value in count.items()]
-    avg = sum(nums)/len(nums)
-    scores[sub] = int(sum([(1 if num>=avg else num/avg) for num in nums]))
-    
+    avg = sum(nums) / len(nums)
+    scores[sub] = int(sum([(1 if num >= avg else num / avg) for num in nums]))
+
+
 upload(scores)
