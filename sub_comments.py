@@ -5,7 +5,7 @@ from sqlalchemy import String, Table, Column, Integer, create_engine, MetaData
 from database_credentials import user, password, host  # postgresql user/pass/host
 
 
-IDEOLOGIES = ["capitalism", "communism"]
+IDEOLOGIES = {"capitalism":["the_donald", "capitalism", "libertarian"], "communism":["stalin_quotes", "communism", "communism101"]}
 REDDIT_URL = "https://www.reddit.com"
 FAKE_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
@@ -17,34 +17,22 @@ AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
 meta = MetaData()
 
 comments_table = Table('comments', meta,
-                       Column('ideology', String(collation='utf8')),
-                       Column('score', Integer))
+                       Column('comment', String(collation='utf8')),
+                       Column('created_at', Timestamp),
+                       Column('subreddit', String()))
 
 
-def upload(scores):
+def upload(comments, ideology, subreddit):
     engine = create_engine('postgresql://%s:%s@%s:5432/postgres' %
                            (user, password, host))
     c = engine.connect()
     trans = c.begin()
 
-    for i, s in scores.items():
-        c.execute(comments_table.insert(), ideology=i, score=s)
+    for comment in comments:
+        c.execute(comments_table.upsert(), ideology=i, score=s)
 
     trans.commit()
     c.close()
-
-
-def count_words(text):
-    print(text)
-    count = {}
-
-    for word in text:
-        if word in count:
-            count[word] += 1
-        else:
-            count[word] = 1
-
-    return count
 
 
 def letters_only(string):
@@ -57,16 +45,18 @@ def comments(sub):
     posts = json.loads(r.text)["data"]["children"]
     comments = [REDDIT_URL + p["data"]["selftext"] + ".json" for p in posts]
     # Remove links and non-alphabetic characters
-    return [letters_only(i) for i in comments if i and ('http' not in i)]
+    res = []
+    for comment in comments:
+        for word in comment.split():
+            if word and 'http' not in word:
+                res.append(letters_only(word))
+
+    return res
 
 
 scores = {}
 
-for sub in IDEOLOGIES:
-    count = count_words(comments(sub))
-    nums = [value for key, value in count.items()]
-    avg = sum(nums) / len(nums)
-    scores[sub] = int(sum([(1 if num >= avg else num / avg) for num in nums]))
-
-
-upload(scores)
+for ideology  in IDEOLOGIES:
+    for sub in ideology:
+        comments = comments(sub)
+        upload(comments, ideology, sub)
