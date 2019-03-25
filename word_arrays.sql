@@ -12,4 +12,4 @@ SELECT i.ideology,
 FROM public.comments c
 JOIN public.ideologies i
   ON c.subreddit=ANY(i.subreddits)
-GROUP BY i.ideology
+GROUP BY i.ideology;

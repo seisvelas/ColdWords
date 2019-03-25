@@ -55,9 +55,10 @@
  #:title "Ideologies"
  #:x-label ""
  #:y-label "Type Token Ratio"
- "histogram.png"))
+ "barchart.png"))
 
 ; returns big lists of all words found for each ideology 
 (let ((ideologies-words (query-rows pgc WORD-ARRAYS-QUERY)))
+  ; create histogram.png based on query''.-
   (ideologies->histogram (map analyze-wordset
                               ideologies-words)))
