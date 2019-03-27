@@ -5,7 +5,7 @@ from sqlalchemy import String, Table, Column, create_engine, MetaData
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.types import DateTime
 from sqlalchemy.sql import func
-from database_credentials import user, password, host  # postgresql user/pass/host
+import os
 
 # Todo: generate this object from ideologies table in db
 IDEOLOGIES = {"capitalism": ["libertarian", "GoldandBlack", "AnCap101"],
@@ -26,9 +26,15 @@ comments_table = Table('comments', meta,
                        Column('subreddit', String(collation='utf8')))
 
 
+user = os.environ("USER")
+password = os.environ("PASS")
+host = os.environ("HOST")
+db = os.environ("DB")
+
+
 def upload(comments, ideology, subreddit):
-    engine = create_engine('postgresql://%s:%s@%s:5432/postgres' %
-                           (user, password, host))
+    engine = create_engine('postgresql://%s:%s@%s:5432/%s' %
+                           (user, password, host, db))
     c = engine.connect()
     trans = c.begin()
 
