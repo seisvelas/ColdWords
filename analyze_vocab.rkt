@@ -7,11 +7,12 @@
 ; load credentials from .py
 (define credentials (string-split (file->string "database_credentials.py") "\""))
 
-; hackishly parse
-(define USER (second credentials))
-(define PASSWORD (fourth credentials))
-(define SERVER (sixth credentials))
-(define DATABASE "postgres")
+; db credentials from environmental variables
+(define env      (current-environment-variables))
+(define USER     (environment-variables-ref env "USER"))
+(define PASSWORD (environment-variables-ref env "PASS"))
+(define SERVER   (environment-variables-ref env "HOST"))
+(define DATABASE (environment-variables-ref env "DB"))
 
 (define WORD-ARRAYS-QUERY
   (file->string "word_arrays.sql"))
@@ -43,19 +44,19 @@
 
 (define (ideologies->histogram ideologies)
   (plot-file
- (discrete-histogram
-  (map (lambda (x)
-         (vector (first x)
-                 (ivl .26 (second x))))
-       ideologies)
-  #:color "darkred"
-  #:line-color "black"
-  #:y-min .275
-  #:y-max .283)
- #:title "Ideologies"
- #:x-label ""
- #:y-label "Type Token Ratio"
- "barchart.png"))
+   (discrete-histogram
+    (map (lambda (i)
+           (vector (first i)
+                   (second i)))
+         ideologies)
+    #:color "darkred"
+    #:line-color "black"
+    #:y-min .275
+    #:y-max .282)
+   #:title "Ideologies"
+   #:x-label ""
+   #:y-label "Type Token Ratio"
+   "barchart.png"))
 
 ; returns big lists of all words found for each ideology 
 (let ((ideologies-words (query-rows pgc WORD-ARRAYS-QUERY)))

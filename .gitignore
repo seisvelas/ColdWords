@@ -1,2 +1,4 @@
+# DrRacket generates files ending in tildes. We don't want these.
+*~
 database_credentials.py
 __pycache__/

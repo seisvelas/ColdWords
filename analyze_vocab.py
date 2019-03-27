@@ -43,7 +43,7 @@ for result in cur.fetchall():
     scores[ideology] = LexicalRichness(words_big_string).ttr
 
 
-# Create chart and save to disk
+# Create chart save to disk
 
 # Michael me va a regañar por abusar los comprehensions
 # se lo juro que son apropriados aquí
