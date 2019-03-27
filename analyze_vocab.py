@@ -1,10 +1,14 @@
 import psycopg2
-# todo: use environmental variables instead of importing from file
-from database_credentials import user, host, password
 from lexicalrichness import LexicalRichness
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
+
+user = os.environ("USER")
+password = os.environ("PASS")
+host = os.environ("HOST")
+db = os.environ("DB")
 
 sns.set()  # only using seaborn for pretty plt styling
 
