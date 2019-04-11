@@ -6,10 +6,10 @@
 
 ; db credentials from environmental variables
 (define env      (current-environment-variables))
-(define USER     (environment-variables-ref env "USER"))
-(define PASSWORD (environment-variables-ref env "PASS"))
-(define SERVER   (environment-variables-ref env "HOST"))
-(define DATABASE (environment-variables-ref env "DB"))
+(define USER     (environment-variables-ref env #"USER"))
+(define PASSWORD (environment-variables-ref env #"PASS"))
+(define SERVER   (environment-variables-ref env #"HOST"))
+(define DATABASE (environment-variables-ref env #"DB"))
 
 (define WORD-ARRAYS-QUERY
   (file->string "word_arrays.sql"))
