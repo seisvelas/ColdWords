@@ -4,9 +4,6 @@
 (require db/util/postgresql)
 (require plot)
 
-; load credentials from .py
-(define credentials (string-split (file->string "database_credentials.py") "\""))
-
 ; db credentials from environmental variables
 (define env      (current-environment-variables))
 (define USER     (environment-variables-ref env "USER"))
